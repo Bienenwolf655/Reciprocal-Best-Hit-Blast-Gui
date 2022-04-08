@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 from Bio.Blast.Applications import NcbiblastpCommandline
 from tkinter import ttk
+from tkinter import *
+from tkinter import filedialog
 
 def main(files):
     os.makedirs(files['Results Folder'], exist_ok=True)
@@ -79,75 +81,77 @@ def main(files):
     rbbh.to_csv(os.path.join(outdir,'rbbh.csv'))
     pb.stop()
 
-from tkinter import *
-from tkinter import filedialog
 
-global files
-files = {}
-def browseFiles(name, label_file_explorer):
+def app():
+    def browseFiles(name, label_file_explorer):
+        
+        if name == "S1" or name == "S2":
+            filename = filedialog.askopenfilename(initialdir = "/home/",
+                                                title = "Select a File",
+                                                filetypes = (("Fasta files",
+                                                                ".fasta"),
+                                                            ("all files",
+                                                                ".")))
+        else:
+            filename = filedialog.askdirectory()
+        label_file_explorer.configure(text=f"File Opened: {filename}")
+        files[name]=filename
+        
+    def close():
+        window.destroy() 
+        
+
+    window = Tk()
+    window.title('Reciprocal Best Hit Blast')
     
-    if name == "S1" or name == "S2":
-        filename = filedialog.askopenfilename(initialdir = "/home/",
-                                              title = "Select a File",
-                                              filetypes = (("Fasta files",
-                                                            ".fasta"),
-                                                           ("all files",
-                                                            ".")))
-    else:
-        filename = filedialog.askdirectory()
-    label_file_explorer.configure(text=f"File Opened: {filename}")
-    files[name]=filename
+    window.geometry("800x300")
     
-def close():
-    window.destroy() 
-       
-
-window = Tk()
-window.title('Reciprocal Best Hit Blast')
-  
-window.geometry("800x300")
-  
-window.config(background = "white")
-pb = ttk.Progressbar(window, orient='horizontal', mode='indeterminate', length=280)
+    window.config(background = "white")
+    pb = ttk.Progressbar(window, orient='horizontal', mode='indeterminate', length=280)
 
 
-button_dict={}
-label_file_explorer_1 = Label(window,text = f"File Explorer S1",width = 100, height = 1,fg = "blue")
-button_dict_1 =Button(window, text="S1", width=25, command=lambda*args: browseFiles("S1", label_file_explorer_1))
-label_file_explorer_2 = Label(window,text = "File Explorer S2",width = 100, height = 1,fg = "blue")
-button_dict_2 =Button(window, text="S2", width=25, command=lambda*args: browseFiles("S2", label_file_explorer_2))
-label_file_explorer_3 = Label(window,text = "File Explorer Results Folder",width = 100, height = 1,fg = "blue")
-button_dict_3 =Button(window, text="Results Folder", width=25, command=lambda*args: browseFiles("Results Folder", label_file_explorer_3))
+    button_dict={}
+    label_file_explorer_1 = Label(window,text = f"File Explorer S1",width = 100, height = 1,fg = "blue")
+    button_dict_1 =Button(window, text="S1", width=25, command=lambda*args: browseFiles("S1", label_file_explorer_1))
+    label_file_explorer_2 = Label(window,text = "File Explorer S2",width = 100, height = 1,fg = "blue")
+    button_dict_2 =Button(window, text="S2", width=25, command=lambda*args: browseFiles("S2", label_file_explorer_2))
+    label_file_explorer_3 = Label(window,text = "File Explorer Results Folder",width = 100, height = 1,fg = "blue")
+    button_dict_3 =Button(window, text="Results Folder", width=25, command=lambda*args: browseFiles("Results Folder", label_file_explorer_3))
 
-label_file_explorer_1.pack()
-button_dict_1.pack()
-label_file_explorer_2.pack()
-button_dict_2.pack()
-label_file_explorer_3.pack()
-button_dict_3.pack()
-options = [
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "all"
-]
+    label_file_explorer_1.pack()
+    button_dict_1.pack()
+    label_file_explorer_2.pack()
+    button_dict_2.pack()
+    label_file_explorer_3.pack()
+    button_dict_3.pack()
+    options = [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "all"
+    ]
 
-clicked = StringVar()
+    clicked = StringVar()
 
-clicked.set( "1" )
+    clicked.set( "1" )
 
-drop = OptionMenu(window ,clicked , *options )
-label = ttk.Label(window,  text='Select the number of results to consider from the blast search:')
-files["NumResBlast"] = clicked.get()
-label.pack()
-drop.pack()
-pb.pack()
-button_dict["Run"] = Button(window, text = "Run RBBH",command = lambda *args: main(files))
-button_dict["Run"].pack()
+    drop = OptionMenu(window ,clicked , *options )
+    label = ttk.Label(window,  text='Select the number of results to consider from the blast search:')
+    files["NumResBlast"] = clicked.get()
+    label.pack()
+    drop.pack()
+    pb.pack()
+    button_dict["Run"] = Button(window, text = "Run RBBH",command = lambda *args: main(files))
+    button_dict["Run"].pack()
 
-button_dict["Exit"] = Button(window, text = "Exit",command = close)
-button_dict["Exit"].pack()
-window.mainloop()
-del files
+    button_dict["Exit"] = Button(window, text = "Exit",command = close)
+    button_dict["Exit"].pack()
+    window.mainloop()
+    
+if __name__ == "__main__":
+    global files
+    files = {}
+    app()
+    del files
