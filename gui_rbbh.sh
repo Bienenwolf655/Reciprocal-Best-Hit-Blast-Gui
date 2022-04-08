@@ -1,2 +1,2 @@
 #!/bin/sh
-nohup python /YourPath &
+nohup python "$PWD"/gui_rbbh.py &
