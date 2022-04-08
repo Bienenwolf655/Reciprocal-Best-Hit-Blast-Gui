@@ -8,4 +8,4 @@ Usage:
 
 
 
-![plot](https://github.com/Bienenwolf655/Reciprocal-Best-Hit-Blast-Gui/image.jpg?raw=true)
+![plot](https://github.com/Bienenwolf655/Reciprocal-Best-Hit-Blast-Gui/image.png?raw=true)
