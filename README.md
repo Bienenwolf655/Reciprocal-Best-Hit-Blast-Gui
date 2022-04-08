@@ -1,1 +1,2 @@
-# Reciprocal-Best-Hit-Blast-Gui
+# Simple Gui for Reciprocal Best Hit with Blast
+
