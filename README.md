@@ -1,11 +1,13 @@
-# Simple Gui for Reciprocal Best Hit with Blast for MacOsX
+# Simple Gui for Reciprocal Best Hit with Blast
 
 Usage:
- - Download Repository
+ - Clone this Repository
+ - If you want to use the effector prediction clone also this repository: https://github.com/JanaSperschneider/EffectorP-3.0.git
+  -> Then follow the steps in the readme of the repository 
  - Make gui_rbbh.sh executable (chmod +x gui_rbbh.sh)
  - Double Click and Run !
 
-<img width="801" alt="img" src="https://user-images.githubusercontent.com/59055238/162410461-02dcb2dd-1f39-420a-8e5e-fe15e68b4f73.png">
+<img width="801" alt="img" src="https://user-images.githubusercontent.com/59055238/162596737-fb37f7ec-fdfc-4e0c-871c-bde453a43a6d.png">
 
-
-
+Requirements:
+Python 3.6 or later
