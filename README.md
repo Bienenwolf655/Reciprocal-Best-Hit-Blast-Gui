@@ -4,7 +4,10 @@ Usage:
  - Clone this Repository
  - If you want to use the effector prediction clone also this repository: https://github.com/JanaSperschneider/EffectorP-3.0.git
   -> Then follow the steps in the readme of the repository 
- - Make gui_rbbh.sh executable (chmod +x gui_rbbh.sh)
+ - Make gui_rbbh.sh executable:
+ ```bash 
+ $ chmod +x gui_rbbh.sh
+ ```
  - Double Click and Run !
  
 ![Screenshot 2022-04-10 at 03 00 32](https://user-images.githubusercontent.com/59055238/162596768-98db113f-bdd8-4077-815a-51a30c5fe378.png)
