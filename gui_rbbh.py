@@ -1,9 +1,8 @@
 import sys
 import subprocess 
-packages = ['numpy', 'pandas']
+packages = ['numpy', 'pandas', 'bio', 'tk']
 for i in packages:
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install', f'{i}'])
-
+    subprocess.check_call(['python3', '-m', 'pip', 'install', f'{i}'])
 import os
 import numpy as np
 import pandas as pd
@@ -11,8 +10,16 @@ from Bio.Blast.Applications import NcbiblastpCommandline
 from tkinter import ttk
 from tkinter import *
 from tkinter import filedialog
+from tkinter import messagebox
+import math
+import os
+from pathlib import Path
+
 
 def main(files):
+    files["effector_pred"] = files["effector_pred"].get()
+    files["exp"] = int(files["exp"].get())
+    files["NumResBlast"] = files["NumResBlast"].get()
     os.makedirs(files['Results Folder'], exist_ok=True)
     outdir = os.path.join(files['Results Folder'])
     s1 = os.path.join(files['S1'])
@@ -51,8 +58,12 @@ def main(files):
     headers = ["query", "subject", "identity", "coverage",
             "qlength", "slength", "alength",
             "bitscore", "E-value"]
+    
     fwd_results.columns = headers
     rev_results.columns = headers
+    threshold = math.exp(files["exp"])
+    fwd_results = fwd_results[fwd_results["E-value"]<=threshold]
+    rev_results = rev_results[rev_results["E-value"]<=threshold]
 
     fwd_results['norm_bitscore'] = fwd_results.bitscore/fwd_results.qlength
     rev_results['norm_bitscore'] = rev_results.bitscore/rev_results.qlength
@@ -77,9 +88,36 @@ def main(files):
     rbbh = rbbh.groupby(['query_x', 'subject_x']).max()
 
     rbbh.head()
-
     rbbh.to_csv(os.path.join(outdir,'rbbh.csv'))
-    pb.stop()
+
+    if files["effector_pred"] == 1:
+        rbbh = pd.read_csv(os.path.join(outdir,'rbbh.csv'))
+        s1_prot = list(rbbh['query_x'])
+        s2_prot = list(rbbh['subject_x'])
+
+        with open(s1,'r') as fn:
+            line_s1 = fn.readlines() 
+        with open(s2,'r') as fn:
+            line_s2 = fn.readlines()
+        f = open(f"{outdir}/rbbh.fasta", "a")
+        for i in s1_prot:
+            f.write(*[f"{line_s1[num]}{line_s1[num+1]}\n" for num,_ in enumerate(line_s1) if i in line_s1[num]])  
+
+        for i in s2_prot:
+            f.write(*[f"{line_s2[num]}{line_s2[num+1]}\n" for num,_ in enumerate(line_s2) if i in line_s2[num]])
+        f.close()
+
+        p = subprocess.Popen(["python", f"{sys.path[0]}/EffectorP-3.0/EffectorP.py","-f",  f"-i{outdir}/rbbh.fasta", 
+        f"-o{outdir}/effektor.tab"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        stdout, stderr = p.communicate()        
+        print(f"STDOUT:{stdout}\nSTDERR:{stderr}")
+        df_eff = pd.read_csv(f"{outdir}/effektor.tab", sep='\t')
+        eff = df_eff.loc[:, 'Cytoplasmic effector':'Prediction']
+        final = pd.concat([rbbh, eff], axis=1, join="inner")
+        final.to_csv(os.path.join(outdir,'final.csv'))
+        messagebox.showinfo('Finished Job', f'Your joined effector prediction and RBBH output has been saved to {outdir}')
+    else:
+        messagebox.showinfo('Finished Job', f'Your RBBH output has been saved to {outdir}')
 
 
 def app():
@@ -104,11 +142,9 @@ def app():
     window = Tk()
     window.title('Reciprocal Best Hit Blast')
     
-    window.geometry("800x300")
+    window.geometry("800x400")
     
     window.config(background = "white")
-    pb = ttk.Progressbar(window, orient='horizontal', mode='indeterminate', length=280)
-
 
     button_dict={}
     label_file_explorer_1 = Label(window,text = f"File Explorer S1",width = 100, height = 1,fg = "blue")
@@ -134,15 +170,20 @@ def app():
     ]
 
     clicked = StringVar()
-
     clicked.set( "1" )
 
     drop = OptionMenu(window ,clicked , *options )
     label = ttk.Label(window,  text='Select the number of results to consider from the blast search:')
-    files["NumResBlast"] = clicked.get()
+    spin = Spinbox(window, from_=-100, to=0, width=10)
     label.pack()
     drop.pack()
-    pb.pack()
+    ttk.Label(window,  text='Select the exponent of the threshold e^:').pack()
+    spin.pack()
+    effector_pred = IntVar()
+    Checkbutton(window, text="EffectorP 3.0 Prediction", variable=effector_pred).pack()
+    files["effector_pred"] = effector_pred
+    files["exp"] = spin
+    files["NumResBlast"] = clicked
     button_dict["Run"] = Button(window, text = "Run RBBH",command = lambda *args: main(files))
     button_dict["Run"].pack()
 
