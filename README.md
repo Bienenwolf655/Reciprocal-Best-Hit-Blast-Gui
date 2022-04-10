@@ -6,8 +6,8 @@ Usage:
   -> Then follow the steps in the readme of the repository 
  - Make gui_rbbh.sh executable (chmod +x gui_rbbh.sh)
  - Double Click and Run !
-
-<img width="801" alt="img" src="https://user-images.githubusercontent.com/59055238/162596737-fb37f7ec-fdfc-4e0c-871c-bde453a43a6d.png">
+ 
+![Screenshot 2022-04-10 at 03 00 32](https://user-images.githubusercontent.com/59055238/162596768-98db113f-bdd8-4077-815a-51a30c5fe378.png)
 
 Requirements:
 Python 3.6 or later
