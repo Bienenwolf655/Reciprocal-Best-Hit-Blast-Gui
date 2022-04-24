@@ -18,6 +18,7 @@ from pathlib import Path
 
 def main(files):
     files["effector_pred"] = files["effector_pred"].get()
+    files["gene_list"] = files["gene_list"].get()
     files["exp"] = int(files["exp"].get())
     files["NumResBlast"] = files["NumResBlast"].get()
     os.makedirs(files['Results Folder'], exist_ok=True)
@@ -89,9 +90,18 @@ def main(files):
 
     rbbh.head()
     rbbh.to_csv(os.path.join(outdir,'rbbh.csv'))
-
+    rbbh = pd.read_csv(os.path.join(outdir,'rbbh.csv'))
+    if files["gene_list"] == 1:
+        data = list(rbbh['query_x'])
+        with open(os.path.join(outdir,'genelist_query_x.txt'), 'w') as fn:
+            fn.write('\n'.join(data))
+            fn.close()
+        data = list(rbbh['subject_x'])
+        with open(os.path.join(outdir,'genelist_subject_x.txt'), 'w') as fn:
+            fn.write('\n'.join(data))
+            fn.close()
+    rbbh.to_csv(os.path.join(outdir,'rbbh.csv'))
     if files["effector_pred"] == 1:
-        rbbh = pd.read_csv(os.path.join(outdir,'rbbh.csv'))
         s1_prot = list(rbbh['query_x'])
         s2_prot = list(rbbh['subject_x'])
 
@@ -118,6 +128,7 @@ def main(files):
         messagebox.showinfo('Finished Job', f'Your joined effector prediction and RBBH output has been saved to {outdir}')
     else:
         messagebox.showinfo('Finished Job', f'Your RBBH output has been saved to {outdir}')
+    del files
 
 
 def app():
@@ -147,12 +158,12 @@ def app():
     window.config(background = "white")
 
     button_dict={}
-    label_file_explorer_1 = Label(window,text = f"File Explorer S1",width = 100, height = 1,fg = "blue")
-    button_dict_1 =Button(window, text="S1", width=25, command=lambda*args: browseFiles("S1", label_file_explorer_1))
-    label_file_explorer_2 = Label(window,text = "File Explorer S2",width = 100, height = 1,fg = "blue")
-    button_dict_2 =Button(window, text="S2", width=25, command=lambda*args: browseFiles("S2", label_file_explorer_2))
-    label_file_explorer_3 = Label(window,text = "File Explorer Results Folder",width = 100, height = 1,fg = "blue")
-    button_dict_3 =Button(window, text="Results Folder", width=25, command=lambda*args: browseFiles("Results Folder", label_file_explorer_3))
+    label_file_explorer_1 = Label(window,text = f"File Explorer S1",width = 100, height = 1,fg = "blue", highlightbackground='#3E4149')
+    button_dict_1 =Button(window, text="S1", width=25, command=lambda*args: browseFiles("S1", label_file_explorer_1), highlightbackground='#3E4149')
+    label_file_explorer_2 = Label(window,text = "File Explorer S2",width = 100, height = 1,fg = "blue", highlightbackground='#3E4149')
+    button_dict_2 =Button(window, text="S2", width=25, command=lambda*args: browseFiles("S2", label_file_explorer_2), highlightbackground='#3E4149')
+    label_file_explorer_3 = Label(window,text = "File Explorer Results Folder",width = 100, height = 1,fg = "blue", highlightbackground='#3E4149')
+    button_dict_3 =Button(window, text="Results Folder", width=25, command=lambda*args: browseFiles("Results Folder", label_file_explorer_3), highlightbackground='#3E4149')
 
     label_file_explorer_1.pack()
     button_dict_1.pack()
@@ -172,21 +183,23 @@ def app():
     clicked = StringVar()
     clicked.set( "1" )
 
-    drop = OptionMenu(window ,clicked , *options )
+    drop = OptionMenu(window ,clicked, *options)
     label = ttk.Label(window,  text='Select the number of results to consider from the blast search:')
-    spin = Spinbox(window, from_=-100, to=0, width=10)
+    spin = Spinbox(window, from_=-100, to=0, width=10, highlightbackground='#3E4149')
     label.pack()
     drop.pack()
-    ttk.Label(window,  text='Select the exponent of the threshold e^:').pack()
+    ttk.Label(window,  text='Select the exponent of the threshold e^ for the E-Value of the Blast Search:').pack()
     spin.pack()
     effector_pred = IntVar()
-    Checkbutton(window, text="EffectorP 3.0 Prediction", variable=effector_pred).pack()
+    gene_list = IntVar()
+    Checkbutton(window, text="EffectorP 3.0 Prediction", variable=effector_pred, highlightbackground='#3E4149').pack()    
+    Checkbutton(window, text="Gene List", variable=gene_list, highlightbackground='#3E4149').pack()
+    files["gene_list"] = gene_list
     files["effector_pred"] = effector_pred
     files["exp"] = spin
     files["NumResBlast"] = clicked
     button_dict["Run"] = Button(window, text = "Run RBBH",command = lambda *args: main(files))
     button_dict["Run"].pack()
-
     button_dict["Exit"] = Button(window, text = "Exit",command = close)
     button_dict["Exit"].pack()
     window.mainloop()
