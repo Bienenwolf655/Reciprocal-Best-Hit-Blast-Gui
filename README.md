@@ -1,4 +1,4 @@
-# Simple Gui for Reciprocal Best Hit with Blast
+# Simple GUI for Reciprocal Best Hit with Blast
 
 ## Usage:
  - Clone this Repository
