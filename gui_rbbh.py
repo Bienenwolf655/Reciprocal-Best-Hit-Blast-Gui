@@ -1,12 +1,11 @@
+#!/usr/bin/python3
 import sys
 import subprocess 
-packages = ['numpy', 'pandas', 'bio', 'tk']
-for i in packages:
-    subprocess.check_call(['python3', '-m', 'pip', 'install', f'{i}'])
 import os
 import numpy as np
 import pandas as pd
 from Bio.Blast.Applications import NcbiblastpCommandline
+from Bio.Blast.Applications import NcbiblastnCommandline
 from tkinter import ttk
 from tkinter import *
 from tkinter import filedialog
@@ -15,12 +14,15 @@ import math
 import os
 from pathlib import Path
 
+def main(files, count):
+    if count == 0:
+        files["effector_pred"] = files["effector_pred"].get()
+        files["gene_list"] = files["gene_list"].get()
+        files["exp"] = int(files["exp"].get())
+        files["NumResBlast"] = files["NumResBlast"].get()
+        files["blastV"] = files["blastV"].get()
+        count +=1
 
-def main(files):
-    files["effector_pred"] = files["effector_pred"].get()
-    files["gene_list"] = files["gene_list"].get()
-    files["exp"] = int(files["exp"].get())
-    files["NumResBlast"] = files["NumResBlast"].get()
     os.makedirs(files['Results Folder'], exist_ok=True)
     outdir = os.path.join(files['Results Folder'])
     s1 = os.path.join(files['S1'])
@@ -34,19 +36,26 @@ def main(files):
         pass
     else:
         num = int(files["NumResBlast"])
+    if files["blastV"] == "blastp":
+        fwd_blast = NcbiblastpCommandline(query=s1, subject=s2, out=fwd_out, max_target_seqs = num,
+                                        outfmt="6 qseqid sseqid pident qcovs qlen slen length bitscore evalue",
+                                        )
+        rev_blast = NcbiblastpCommandline(query=s2, subject=s1, out=rev_out, max_target_seqs = num,
+                                        outfmt="6 qseqid sseqid pident qcovs qlen slen length bitscore evalue",
+                                        )
+    elif files["blastV"] == "blastn":
+        fwd_blast = NcbiblastnCommandline(query=s1, subject=s2, out=fwd_out, max_target_seqs = num,
+                                        outfmt="6 qseqid sseqid pident qcovs qlen slen length bitscore evalue",
+                                        )
+        rev_blast = NcbiblastnCommandline(query=s2, subject=s1, out=rev_out, max_target_seqs = num,
+                                        outfmt="6 qseqid sseqid pident qcovs qlen slen length bitscore evalue",
+                                        )
 
-    fwd_blastp = NcbiblastpCommandline(query=s1, subject=s2, out=fwd_out, max_target_seqs = num,
-                                      outfmt="6 qseqid sseqid pident qcovs qlen slen length bitscore evalue",
-                                    )
-    rev_blastp = NcbiblastpCommandline(query=s2, subject=s1, out=rev_out, max_target_seqs = num,
-                                      outfmt="6 qseqid sseqid pident qcovs qlen slen length bitscore evalue",
-                                    )
+    print("FORWARD: %s" % fwd_blast)
+    print("REVERSE: %s" % rev_blast)
 
-    print("FORWARD: %s" % fwd_blastp)
-    print("REVERSE: %s" % rev_blastp)
-
-    fwd_stdout, fwd_stderr = fwd_blastp()
-    rev_stdout, rev_stderr = rev_blastp()
+    fwd_stdout, fwd_stderr = fwd_blast()
+    rev_stdout, rev_stderr = rev_blast()
 
     print("FWD STDOUT: %s" % fwd_stdout)
     print("FWD STDERR: %s" % fwd_stderr)
@@ -116,8 +125,8 @@ def main(files):
         for i in s2_prot:
             f.write(*[f"{line_s2[num]}{line_s2[num+1]}\n" for num,_ in enumerate(line_s2) if i in line_s2[num]])
         f.close()
-
-        p = subprocess.Popen(["python", f"{sys.path[0]}/EffectorP-3.0/EffectorP.py","-f",  f"-i{outdir}/rbbh.fasta", 
+        effploc = files["EffectorP 3.0 location"]
+        p = subprocess.Popen(["python", f"{effploc}/EffectorP-3.0/EffectorP.py","-f",  f"-i{outdir}/rbbh.fasta", 
         f"-o{outdir}/effektor.tab"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         stdout, stderr = p.communicate()        
         print(f"STDOUT:{stdout}\nSTDERR:{stderr}")
@@ -128,7 +137,6 @@ def main(files):
         messagebox.showinfo('Finished Job', f'Your joined effector prediction and RBBH output has been saved to {outdir}')
     else:
         messagebox.showinfo('Finished Job', f'Your RBBH output has been saved to {outdir}')
-    del files
 
 
 def app():
@@ -145,6 +153,16 @@ def app():
             filename = filedialog.askdirectory()
         label_file_explorer.configure(text=f"File Opened: {filename}")
         files[name]=filename
+    
+    def hide(widgets, variable):
+        if variable == 0:
+            for widget in widgets:
+                widget.pack_forget()
+            window.geometry("800x250")
+        elif variable == 1:
+            for widget in widgets:
+                widget.pack(side=TOP, anchor=N, expand = True)
+            window.geometry("800x600")    
         
     def close():
         window.destroy() 
@@ -153,7 +171,7 @@ def app():
     window = Tk()
     window.title('Reciprocal Best Hit Blast')
     
-    window.geometry("800x400")
+    window.geometry("800x250")
     
     window.config(background = "white")
 
@@ -164,7 +182,12 @@ def app():
     button_dict_2 =Button(window, text="S2", width=25, command=lambda*args: browseFiles("S2", label_file_explorer_2), highlightbackground='#3E4149')
     label_file_explorer_3 = Label(window,text = "File Explorer Results Folder",width = 100, height = 1,fg = "blue", highlightbackground='#3E4149')
     button_dict_3 =Button(window, text="Results Folder", width=25, command=lambda*args: browseFiles("Results Folder", label_file_explorer_3), highlightbackground='#3E4149')
-
+    label_file_explorer_4 = Label(window,text = "File Explorer EffectorP 3.0 location",width = 100, height = 1,fg = "blue", highlightbackground='#3E4149')
+    button_dict_4 =Button(window, text="EffectorP 3.0 location", width=25, command=lambda*args: browseFiles("Results Folder", label_file_explorer_3), highlightbackground='#3E4149')
+    clicked_blast = StringVar()
+    clicked_blast.set("blastp")
+    drop_blast = OptionMenu(window ,clicked_blast, *["blastn","blastp"])
+    label_blastv = ttk.Label(window,  text='Select the blast version to be used:')
     label_file_explorer_1.pack()
     button_dict_1.pack()
     label_file_explorer_2.pack()
@@ -179,29 +202,31 @@ def app():
         "5",
         "all"
     ]
-
     clicked = StringVar()
     clicked.set( "1" )
 
     drop = OptionMenu(window ,clicked, *options)
     label = ttk.Label(window,  text='Select the number of results to consider from the blast search:')
     spin = Spinbox(window, from_=-100, to=0, width=10, highlightbackground='#3E4149')
-    label.pack()
-    drop.pack()
-    ttk.Label(window,  text='Select the exponent of the threshold e^ for the E-Value of the Blast Search:').pack()
-    spin.pack()
+    label_spin = ttk.Label(window,  text='Select the exponent of the threshold e^ for the E-Value of the Blast Search:')
     effector_pred = IntVar()
     gene_list = IntVar()
-    Checkbutton(window, text="EffectorP 3.0 Prediction", variable=effector_pred, highlightbackground='#3E4149').pack()    
-    Checkbutton(window, text="Gene List", variable=gene_list, highlightbackground='#3E4149').pack()
+    eff = Checkbutton(window, text="EffectorP 3.0 Prediction", variable=effector_pred, highlightbackground='#3E4149')
+    gene_l = Checkbutton(window, text="Gene List", variable=gene_list, highlightbackground='#3E4149')
     files["gene_list"] = gene_list
     files["effector_pred"] = effector_pred
     files["exp"] = spin
     files["NumResBlast"] = clicked
-    button_dict["Run"] = Button(window, text = "Run RBBH",command = lambda *args: main(files))
+    files["blastV"] = clicked_blast
+    count = 0
+    var1 = IntVar()
+    Checkbutton(window, text="Advanced Options", variable=var1, command=lambda*args: hide([label,drop,label_spin,spin,label_blastv,drop_blast,eff,label_file_explorer_4,button_dict_4,gene_l], variable=var1.get())).pack(expand=True)
+
+    button_dict["Run"] = Button(window, text = "Run RBBH",command = lambda *args: main(files, count),highlightbackground='#3E4149')
     button_dict["Run"].pack()
-    button_dict["Exit"] = Button(window, text = "Exit",command = close)
-    button_dict["Exit"].pack()
+    button_dict["Exit"] = Button(window, text = "Exit",command = close,highlightbackground='#3E4149')
+    button_dict["Exit"].pack(expand = True)
+
     window.mainloop()
     
 if __name__ == "__main__":
@@ -209,3 +234,8 @@ if __name__ == "__main__":
     files = {}
     app()
     del files
+
+# features to add: new window, signalP, promotor extractor, meme suite, 
+
+
+
